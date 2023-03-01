@@ -5,5 +5,11 @@
  * @returns {object} - returns the new object
  */
 export const pick = (obj, ...fields) => {
-
+  return Object.fromEntries(
+    Object.entries(obj).filter(([key, value]) => isPresent(fields, key))
+  );
 };
+
+function isPresent(arr, value) {
+  return arr.find((item) => item === value);
+}
