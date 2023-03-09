@@ -1,18 +1,16 @@
 export default class ColumnChart {
-  constructor(params) {
-    this.chartHeight = 50;
-
-    this.render(params);
-    this.initEventListeners();
-  }
-
-  getTemplate({
+  constructor({
     data = [],
     label = "",
     link = "",
     formatHeading = (val) => val,
-    value = "0",
+    value = 0,
   } = {}) {
+    this.chartHeight = 50;
+    this.render({ data, label, link, formatHeading, value });
+  }
+
+  getTemplate({ data, label, link, formatHeading, value }) {
     return `
     <div class="column-chart ${this._getLoadingStatus(data)}" 
       style="--chart-height: ${this.chartHeight}">
@@ -49,13 +47,8 @@ export default class ColumnChart {
     this.element.remove();
   }
 
-  initEventListeners() {
-    // add listeners
-  }
-
   destroy() {
     this.remove();
-    // and remove listeners
   }
 
   _getLoadingStatus(data) {
@@ -73,7 +66,7 @@ export default class ColumnChart {
 
   _getColumnProps(data) {
     const maxValue = Math.max(...data);
-    const scale = 50 / maxValue;
+    const scale = this.chartHeight / maxValue;
 
     return data.map((item) => {
       return {
