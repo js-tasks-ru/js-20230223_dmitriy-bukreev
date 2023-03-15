@@ -2,35 +2,38 @@ export default class DoubleSlider {
   element;
   subElements = {};
   selected = {};
+  activeThumb;
 
   startSelection = (event) => {
     // Fails tests: setPointerCapture is not a function
-    event.target.setPointerCapture(event.pointerId);
-    event.target.addEventListener("pointermove", this.processSelection);
-    event.target.addEventListener("pointerup", this.finishSelection);
+    // event.target.setPointerCapture(event.pointerId);
+    this.activeThumb = event.target;
+    document.addEventListener("pointermove", this.processSelection);
+    document.addEventListener("pointerup", this.finishSelection);
   };
 
   processSelection = (event) => {
-    const leftBorder = event.target.bindings.leftBorder;
-    const rightBorder = event.target.bindings.rightBorder;
+    const leftBorder = this.activeThumb.bindings.leftBorder;
+    const rightBorder = this.activeThumb.bindings.rightBorder;
     const sliderRect = this.subElements.slider.getBoundingClientRect();
 
     let position = event.clientX;
     if (position < leftBorder) position = leftBorder;
     if (position > rightBorder) position = rightBorder;
 
-    event.target.bindings.position =
+    this.activeThumb.bindings.position =
       (position - sliderRect.left) / sliderRect.width;
+    console.log((position - sliderRect.left) / sliderRect.width);
   };
 
-  finishSelection = (event) => {
-    event.target.removeEventListener("pointermove", this.processSelection);
-    event.target.removeEventListener("pointerup", this.finishSelection);
+  finishSelection = () => {
+    document.removeEventListener("pointermove", this.processSelection);
+    document.removeEventListener("pointerup", this.finishSelection);
     const selectedEvent = new Event("range-select", { bubbles: true });
     this.element.dispatchEvent(selectedEvent);
+    this.activeThumb = null;
   };
 
-  // TODO REMOVE FORMATTING
   constructor({
     min = 0,
     max = 100,
@@ -59,7 +62,9 @@ export default class DoubleSlider {
     const subElements = this.subElements;
 
     const valueFromPosition = (pos) => {
-      return this.formatValue(((this.max - this.min) * pos).toFixed());
+      return this.formatValue(
+        (pos * (this.max - this.min) + this.min).toFixed()
+      );
     };
 
     subElements.thumbLeft.bindings = {
@@ -125,7 +130,7 @@ export default class DoubleSlider {
   }
 
   getPercent(value) {
-    return (value / (this.max - this.min)) * 100;
+    return ((value - this.min) * 100) / (this.max - this.min);
   }
 
   getSubElements(element) {
