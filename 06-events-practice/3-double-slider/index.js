@@ -1,35 +1,40 @@
-// import { template } from "@babel/core";
-
 export default class DoubleSlider {
   element;
   subElements = {};
   selected = {};
-  shiftX = 0;
 
   startSelection = (event) => {
-    const thumb = event.target;
-    // Prevents thumb from jumping
-    // this.shiftX = event.clientX - thumb.getBoundingClientRect().left;
-    thumb.setPointerCapture(event.pointerId);
-    thumb.addEventListener("pointermove", this.processSelection);
-    thumb.addEventListener("pointerup", this.finishSelection);
+    // Fails tests: setPointerCapture is not a function
+    event.target.setPointerCapture(event.pointerId);
+    event.target.addEventListener("pointermove", this.processSelection);
+    event.target.addEventListener("pointerup", this.finishSelection);
   };
 
   processSelection = (event) => {
-    // let newLeft = event.clientX -
+    const leftBorder = event.target.bindings.leftBorder;
+    const rightBorder = event.target.bindings.rightBorder;
+    const sliderRect = this.subElements.slider.getBoundingClientRect();
+
+    let position = event.clientX;
+    if (position < leftBorder) position = leftBorder;
+    if (position > rightBorder) position = rightBorder;
+
+    event.target.bindings.position =
+      (position - sliderRect.left) / sliderRect.width;
   };
 
   finishSelection = (event) => {
     event.target.removeEventListener("pointermove", this.processSelection);
     event.target.removeEventListener("pointerup", this.finishSelection);
-    // dispatch selection
+    const selectedEvent = new Event("range-select", { bubbles: true });
+    this.element.dispatchEvent(selectedEvent);
   };
 
   // TODO REMOVE FORMATTING
   constructor({
     min = 0,
     max = 100,
-    formatValue = (val) => "$ " + val,
+    formatValue = (val) => val,
     selected = {},
   } = {}) {
     this.min = min;
@@ -47,6 +52,49 @@ export default class DoubleSlider {
     wrapper.innerHTML = this.template;
     this.element = wrapper.firstElementChild;
     this.subElements = this.getSubElements(this.element);
+    this.createBindings();
+  }
+
+  createBindings() {
+    const subElements = this.subElements;
+
+    const valueFromPosition = (pos) => {
+      return this.formatValue(((this.max - this.min) * pos).toFixed());
+    };
+
+    subElements.thumbLeft.bindings = {
+      get leftBorder() {
+        return subElements.slider.getBoundingClientRect().left;
+      },
+
+      get rightBorder() {
+        return subElements.thumbRight.getBoundingClientRect().left;
+      },
+
+      set position(pos) {
+        subElements.from.textContent = valueFromPosition(pos);
+        const percent = pos * 100 + "%";
+        subElements.range.style.left = percent;
+        subElements.thumbLeft.style.left = percent;
+      },
+    };
+
+    subElements.thumbRight.bindings = {
+      get leftBorder() {
+        return subElements.thumbLeft.getBoundingClientRect().right;
+      },
+
+      get rightBorder() {
+        return subElements.slider.getBoundingClientRect().right;
+      },
+
+      set position(pos) {
+        subElements.to.textContent = valueFromPosition(pos);
+        const percent = 100 - pos * 100 + "%";
+        subElements.range.style.right = percent;
+        subElements.thumbRight.style.right = percent;
+      },
+    };
   }
 
   initListeners() {
@@ -66,12 +114,12 @@ export default class DoubleSlider {
     return `
     <div class="range-slider">
     <span data-element="from">${this.formatValue(this.selected.from)}</span>
-    <div class="range-slider__inner">
+    <div class="range-slider__inner" data-element="slider">
       <span class="range-slider__progress" style="left: ${fromPos}%; right: ${toPos}%" data-element="range"></span>
       <span class="range-slider__thumb-left" style="left: ${fromPos}%" data-element="thumbLeft"></span>
       <span class="range-slider__thumb-right" style="right: ${toPos}%" data-element="thumbRight"></span>
-    </div data-element="to">
-    <span>${this.formatValue(this.selected.to)}</span>
+    </div>
+    <span data-element="to">${this.formatValue(this.selected.to)}</span>
     </div>
     `;
   }
