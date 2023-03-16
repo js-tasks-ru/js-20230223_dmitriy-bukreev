@@ -8,13 +8,13 @@ export default class SortableTable {
 
     if (field.dataset.sortable === "false") return;
 
-    if (this.sortedField != field) {
+    if (this.sortedField !== field) {
       this.sortedField.dataset.order = "";
       this.sortedField = field;
     }
 
     const ordersMap = {
-      "": "asc",
+      "": "desc",
       asc: "desc",
       desc: "asc",
     };
@@ -174,10 +174,6 @@ export default class SortableTable {
   destroy() {
     if (!this.element) return;
     this.remove();
-    this.subElements.header.removeEventListener(
-      "pointerdown",
-      this.sortHandler
-    );
     this.element = null;
     this.sortedField = null;
     this.subElements = {};
