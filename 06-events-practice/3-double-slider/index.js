@@ -158,7 +158,7 @@ export default class DoubleSlider {
 
   destroy() {
     this.remove();
-    // this.element = null;
-    // this.subElements = {};
+    this.element = null;
+    this.subElements = {};
   }
 }
