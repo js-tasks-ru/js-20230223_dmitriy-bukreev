@@ -28,7 +28,10 @@ export default class DoubleSlider {
     const thumb = event.target;
     thumb.removeEventListener("pointermove", this.processSelection);
     thumb.removeEventListener("pointerup", this.finishSelection);
-    const selectedEvent = new Event("range-select", { bubbles: true });
+    const selectedEvent = new CustomEvent("range-select", {
+      bubbles: true,
+      detail: this.selected,
+    });
     thumb.dispatchEvent(selectedEvent);
   };
 
@@ -58,11 +61,11 @@ export default class DoubleSlider {
 
   createBindings() {
     const subElements = this.subElements;
+    const formatValue = this.formatValue;
+    const selected = this.selected;
 
     const valueFromPosition = (pos) => {
-      return this.formatValue(
-        (pos * (this.max - this.min) + this.min).toFixed()
-      );
+      return Math.round(pos * (this.max - this.min) + this.min);
     };
 
     subElements.thumbLeft.bindings = {
@@ -75,7 +78,9 @@ export default class DoubleSlider {
       },
 
       set position(pos) {
-        subElements.from.textContent = valueFromPosition(pos);
+        const value = valueFromPosition(pos);
+        subElements.from.textContent = formatValue(value);
+        selected.from = value;
         const percent = pos * 100 + "%";
         subElements.range.style.left = percent;
         subElements.thumbLeft.style.left = percent;
@@ -92,7 +97,9 @@ export default class DoubleSlider {
       },
 
       set position(pos) {
-        subElements.to.textContent = valueFromPosition(pos);
+        const value = valueFromPosition(pos);
+        subElements.to.textContent = formatValue(value);
+        selected.to = value;
         const percent = 100 - pos * 100 + "%";
         subElements.range.style.right = percent;
         subElements.thumbRight.style.right = percent;
