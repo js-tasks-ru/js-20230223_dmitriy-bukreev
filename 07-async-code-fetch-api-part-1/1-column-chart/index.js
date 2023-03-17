@@ -98,7 +98,6 @@ export default class ColumnChart {
     const dataURL = new URL(this.url, this.base);
     dataURL.searchParams.set("from", from.toISOString());
     dataURL.searchParams.set("to", to.toISOString());
-    console.log(dataURL);
     const data = await fetchJson(dataURL);
 
     // Show recieved values
