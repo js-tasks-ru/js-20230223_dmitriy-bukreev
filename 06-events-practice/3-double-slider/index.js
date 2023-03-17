@@ -2,36 +2,34 @@ export default class DoubleSlider {
   element;
   subElements = {};
   selected = {};
-  activeThumb;
 
   startSelection = (event) => {
     // Fails tests: setPointerCapture is not a function
-    // event.target.setPointerCapture(event.pointerId);
-    this.activeThumb = event.target;
-    document.addEventListener("pointermove", this.processSelection);
-    document.addEventListener("pointerup", this.finishSelection);
+    const thumb = event.target;
+    thumb.setPointerCapture(event.pointerId);
+    thumb.addEventListener("pointermove", this.processSelection);
+    thumb.addEventListener("pointerup", this.finishSelection);
   };
 
   processSelection = (event) => {
-    const leftBorder = this.activeThumb.bindings.leftBorder;
-    const rightBorder = this.activeThumb.bindings.rightBorder;
+    const leftBorder = event.target.bindings.leftBorder;
+    const rightBorder = event.target.bindings.rightBorder;
     const sliderRect = this.subElements.slider.getBoundingClientRect();
 
     let position = event.clientX;
     if (position < leftBorder) position = leftBorder;
     if (position > rightBorder) position = rightBorder;
 
-    this.activeThumb.bindings.position =
+    event.target.bindings.position =
       (position - sliderRect.left) / sliderRect.width;
-    console.log((position - sliderRect.left) / sliderRect.width);
   };
 
-  finishSelection = () => {
-    document.removeEventListener("pointermove", this.processSelection);
-    document.removeEventListener("pointerup", this.finishSelection);
+  finishSelection = (event) => {
+    const thumb = event.target;
+    thumb.removeEventListener("pointermove", this.processSelection);
+    thumb.removeEventListener("pointerup", this.finishSelection);
     const selectedEvent = new Event("range-select", { bubbles: true });
-    this.element.dispatchEvent(selectedEvent);
-    this.activeThumb = null;
+    thumb.dispatchEvent(selectedEvent);
   };
 
   constructor({
@@ -153,7 +151,7 @@ export default class DoubleSlider {
 
   destroy() {
     this.remove();
-    this.element = null;
-    this.subElements = {};
+    // this.element = null;
+    // this.subElements = {};
   }
 }
