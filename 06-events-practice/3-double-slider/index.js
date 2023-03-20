@@ -2,37 +2,36 @@ export default class DoubleSlider {
   element;
   subElements = {};
   selected = {};
+  activeThumb;
 
   startSelection = (event) => {
-    // Fails tests: setPointerCapture is not a function
-    const thumb = event.target;
-    thumb.setPointerCapture(event.pointerId);
-    thumb.addEventListener("pointermove", this.processSelection);
-    thumb.addEventListener("pointerup", this.finishSelection);
+    this.activeThumb = event.target;
+    document.addEventListener("pointermove", this.processSelection);
+    document.addEventListener("pointerup", this.finishSelection);
   };
 
   processSelection = (event) => {
-    const leftBorder = event.target.bindings.leftBorder;
-    const rightBorder = event.target.bindings.rightBorder;
+    const leftBorder = this.activeThumb.bindings.leftBorder;
+    const rightBorder = this.activeThumb.bindings.rightBorder;
     const sliderRect = this.subElements.slider.getBoundingClientRect();
 
     let position = event.clientX;
     if (position < leftBorder) position = leftBorder;
     if (position > rightBorder) position = rightBorder;
 
-    event.target.bindings.position =
+    this.activeThumb.bindings.position =
       (position - sliderRect.left) / sliderRect.width;
   };
 
-  finishSelection = (event) => {
-    const thumb = event.target;
-    thumb.removeEventListener("pointermove", this.processSelection);
-    thumb.removeEventListener("pointerup", this.finishSelection);
+  finishSelection = () => {
+    this.activeThumb = null;
+    document.removeEventListener("pointermove", this.processSelection);
+    document.removeEventListener("pointerup", this.finishSelection);
     const selectedEvent = new CustomEvent("range-select", {
       bubbles: true,
       detail: this.selected,
     });
-    thumb.dispatchEvent(selectedEvent);
+    this.element.dispatchEvent(selectedEvent);
   };
 
   constructor({
@@ -158,7 +157,10 @@ export default class DoubleSlider {
 
   destroy() {
     this.remove();
+    document.removeEventListener("pointermove", this.processSelection);
+    document.removeEventListener("pointerup", this.finishSelection);
     this.element = null;
+    this.activeThumb = null;
     this.subElements = {};
   }
 }
