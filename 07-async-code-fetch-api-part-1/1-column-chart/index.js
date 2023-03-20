@@ -94,19 +94,24 @@ export default class ColumnChart {
     // Indicate that loading started
     this.element.classList.add("column-chart_loading");
 
-    // Request data
-    const dataURL = new URL(this.url, this.base);
-    dataURL.searchParams.set("from", from.toISOString());
-    dataURL.searchParams.set("to", to.toISOString());
-    const data = await fetchJson(dataURL);
+    // Load data
+    const data = await this.loadData(from, to);
+    const values = Object.values(data);
 
     // Show recieved values
-    const values = Object.values(data);
     this.subElements.body.innerHTML = this.getColumnBody(values);
     this.subElements.header.innerText = this.formatHeading(
       values.reduce((a, b) => a + b)
     );
     this.element.classList.remove("column-chart_loading");
+    return data;
+  }
+
+  async loadData(from, to) {
+    const dataURL = new URL(this.url, this.base);
+    dataURL.searchParams.set("from", from.toISOString());
+    dataURL.searchParams.set("to", to.toISOString());
+    const data = await fetchJson(dataURL);
     return data;
   }
 
