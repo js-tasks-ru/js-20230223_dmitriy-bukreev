@@ -5,8 +5,6 @@ export default class DoubleSlider {
   activeThumb;
 
   startSelection = (event) => {
-    // Fails tests: setPointerCapture is not a function
-    // event.target.setPointerCapture(event.pointerId);
     this.activeThumb = event.target;
     document.addEventListener("pointermove", this.processSelection);
     document.addEventListener("pointerup", this.finishSelection);
@@ -23,15 +21,17 @@ export default class DoubleSlider {
 
     this.activeThumb.bindings.position =
       (position - sliderRect.left) / sliderRect.width;
-    console.log((position - sliderRect.left) / sliderRect.width);
   };
 
   finishSelection = () => {
+    this.activeThumb = null;
     document.removeEventListener("pointermove", this.processSelection);
     document.removeEventListener("pointerup", this.finishSelection);
-    const selectedEvent = new Event("range-select", { bubbles: true });
+    const selectedEvent = new CustomEvent("range-select", {
+      bubbles: true,
+      detail: this.selected,
+    });
     this.element.dispatchEvent(selectedEvent);
-    this.activeThumb = null;
   };
 
   constructor({
@@ -60,11 +60,11 @@ export default class DoubleSlider {
 
   createBindings() {
     const subElements = this.subElements;
+    const formatValue = this.formatValue;
+    const selected = this.selected;
 
     const valueFromPosition = (pos) => {
-      return this.formatValue(
-        (pos * (this.max - this.min) + this.min).toFixed()
-      );
+      return Math.round(pos * (this.max - this.min) + this.min);
     };
 
     subElements.thumbLeft.bindings = {
@@ -77,7 +77,9 @@ export default class DoubleSlider {
       },
 
       set position(pos) {
-        subElements.from.textContent = valueFromPosition(pos);
+        const value = valueFromPosition(pos);
+        subElements.from.textContent = formatValue(value);
+        selected.from = value;
         const percent = pos * 100 + "%";
         subElements.range.style.left = percent;
         subElements.thumbLeft.style.left = percent;
@@ -94,7 +96,9 @@ export default class DoubleSlider {
       },
 
       set position(pos) {
-        subElements.to.textContent = valueFromPosition(pos);
+        const value = valueFromPosition(pos);
+        subElements.to.textContent = formatValue(value);
+        selected.to = value;
         const percent = 100 - pos * 100 + "%";
         subElements.range.style.right = percent;
         subElements.thumbRight.style.right = percent;
@@ -153,7 +157,10 @@ export default class DoubleSlider {
 
   destroy() {
     this.remove();
+    document.removeEventListener("pointermove", this.processSelection);
+    document.removeEventListener("pointerup", this.finishSelection);
     this.element = null;
+    this.activeThumb = null;
     this.subElements = {};
   }
 }
